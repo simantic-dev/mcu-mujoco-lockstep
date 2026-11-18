@@ -36,7 +36,7 @@ for i in range(0, len(t), 4):
     b.plot(t[:i+1], qw[:i+1], color="C0"); b.plot(t[:i+1], [tg(x) for x in t[:i+1]], "k--", lw=1)
     b.set_xlim(0, t[-1]); b.set_ylim(-3.5, 3.5); b.set_xlabel("virtual time, s", fontsize=8); b.set_ylabel("hinge angle, rad", fontsize=8); b.tick_params(labelsize=8)
     fig.text(0.6, 0.95, f"t = {t[i]:5.2f} s   torque {tau[i]:+.2f} N*m   iq {iq[i]:+.1f} A", fontsize=9, family="monospace")
-    fig.text(0.03, 0.30, "pyrite 0.10.4: the firmware on a simulated STM32G474 (its USB console, CAN, SPI encoder, PWM)", fontsize=10, weight="bold")
+    fig.text(0.03, 0.30, "Simantic sim 0.10.4: the firmware on a simulated STM32G474 (its USB console, CAN, SPI encoder, PWM)", fontsize=10, weight="bold")
     lines = [f"[{ts:6.3f}s] {tx}" for ts, tx in con if ts <= t[i]][-6:]
     fig.text(0.03, 0.04, "\n".join(lines), fontsize=9, family="monospace", va="bottom")
     fig.text(0.99, 0.01, "playback of a captured run, virtual time", fontsize=7, ha="right", color="gray")
