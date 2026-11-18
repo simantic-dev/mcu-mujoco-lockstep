@@ -1,5 +1,5 @@
 # Runs every case in two_link_cases.py through two firmware instances in sim (the two-link scenario) and scores each from MuJoCo's true joint angles.
-# Usage: VENV=<venv> python sim/mujoco/run_two_link.py [case ...]   -> sim/out/two/<name>/{arm.xml,sim.log,uart.log}, sim/out/two/results.json
+# Usage: [SIM_LOCK=<lock file> to queue runs behind other heavy jobs] VENV=<venv> python sim/mujoco/run_two_link.py [case ...]   -> sim/out/two/<name>/{arm.xml,sim.log,uart.log}, sim/out/two/results.json
 import json, math, os, re, subprocess, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, HERE); sys.path.insert(0, os.path.join(ROOT, "sim", "peers"))
@@ -36,7 +36,7 @@ def main():
         env = dict(os.environ, PYTHONPATH=sp, ARM_XML=os.path.join(d, "arm.xml"))
         env.update({k: str(v) for k, v in c["env"].items()})
         t0 = time.time()
-        cmd = ["lockf", "-k", "/Users/anoof/dev/simantic/.heavy.lock", "timeout", "300", "sim", "run", "--scenario", "sim/scenario-2link.yaml", "--usb-cdc-console", "j1.usb", "--usb-cdc-console", "j2.usb",
+        cmd = (["lockf", "-k", os.environ["SIM_LOCK"]] if os.environ.get("SIM_LOCK") else []) + ["timeout", "300", "sim", "run", "--scenario", "sim/scenario-2link.yaml", "--usb-cdc-console", "j1.usb", "--usb-cdc-console", "j2.usb",
                "--timeout", str(END_S), "--ascii", "--expect", "JOINT 1 ready", "--expect", "JOINT 2 ready"]
         if os.environ.get("RESCORE") and os.path.exists(os.path.join(d, "sim.log")):
             r = type("R", (), {"returncode": 0})

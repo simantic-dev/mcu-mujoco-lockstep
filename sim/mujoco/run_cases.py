@@ -1,5 +1,5 @@
 # Runs every case in cases.py through the firmware in sim, one after another, and scores each from MuJoCo's true load angle.
-# Usage: VENV=<venv> python sim/mujoco/run_cases.py [case ...]   -> sim/out/cases/<name>/{arm.xml,arm-sim.log,arm-uart.log}, sim/out/cases/results.json
+# Usage: [SIM_LOCK=<lock file> to queue runs behind other heavy jobs] VENV=<venv> python sim/mujoco/run_cases.py [case ...]   -> sim/out/cases/<name>/{arm.xml,arm-sim.log,arm-uart.log}, sim/out/cases/results.json
 import json, math, os, re, subprocess, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, HERE); sys.path.insert(0, os.path.join(ROOT, "sim", "peers"))
@@ -45,7 +45,7 @@ def main():
         env = dict(os.environ, PYTHONPATH=sp, ARM_XML=os.path.join(d, "arm.xml"), ENC_OFFSET_RAD="3.14159")
         env.update({k: str(v) for k, v in c["env"].items()})
         t0 = time.time()
-        cmd = ["lockf", "-k", "/Users/anoof/dev/simantic/.heavy.lock", "timeout", "300", "sim", "run", "--scenario", c.get("scenario", "sim/scenario.yaml"), "--usb-cdc-console", "dut.usb",
+        cmd = (["lockf", "-k", os.environ["SIM_LOCK"]] if os.environ.get("SIM_LOCK") else []) + ["timeout", "300", "sim", "run", "--scenario", c.get("scenario", "sim/scenario.yaml"), "--usb-cdc-console", "dut.usb",
                "--timeout", "14", "--ascii", "--expect", "JOINT 1 ready"]
         if os.environ.get("RESCORE") and os.path.exists(os.path.join(d, "arm-sim.log")):  # score the logs already there
             r = type("R", (), {"returncode": 0})
