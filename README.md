@@ -63,9 +63,54 @@ On the two-link arm (`sim/mujoco/run_two_link.py ideal`, 17 s virtual) both join
 
 ## Imperfect sensors and mechanics
 
-`sim/mujoco/run_cases.py` (one link, 12 cases) and `sim/mujoco/run_two_link.py` (two links, 8 cases) run the same firmware against worse
-encoders (noise, quantisation, lag; the AS5047P datasheet values as a realistic case), joint friction, a heavier payload and backlash
-(a MuJoCo tendon-limited gap). Results and the comparison GIFs are being added.
+The same firmware against worse encoders (noise, quantisation, lag; the AS5047P datasheet values as a realistic case), joint friction, a
+heavier payload and backlash. Backlash is the standard dead-zone model (Nordin and Gutman, Automatica 38(10), 2002) built as a MuJoCo fixed
+tendon on (rotor angle - load angle) with a limited range, so MuJoCo's own constraint solver stops the relative motion at the gap's ends
+(`sim/mujoco/lash_check.py` checks it). Each case is a full run of the firmware, scored from MuJoCo's true joint angles, not from what the
+firmware sees. Noise uses one fixed seed per case: one sample, not a statistic.
+
+### Two links
+
+![Eight two-link cases side by side, same firmware in every panel](sim/screenshots/two-link-cases.gif)
+
+| Case | Parameters | Arm out | Straight up | Up, elbow bent |
+| --- | --- | --- | --- | --- |
+| Ideal | exact encoders, no friction, no backlash | held (0.005 rad) | held (0.007 rad) | held (0.001 rad) |
+| AS5047P-class encoders | 14-bit, noise 0.068 deg rms, delay 110 us, both joints (datasheet (AS5047P)) | held (0.011 rad) | held (0.013 rad) | held (0.015 rad) |
+| Rough encoders | 12-bit, noise 0.3 deg rms, delay 5 ms, both joints (chosen) | **not held** (0.365 rad) | **not held** (0.383 rad) | **not held** (0.156 rad) |
+| Encoder lag | delay 30 ms on both encoders, otherwise exact (chosen) | **whirls away** | **whirls away** | **whirls away** |
+| Backlash 1 deg, encoders on motors | gap 1 deg at both joints, encoders on the motors (chosen) | held (0.013 rad) | held (0.016 rad) | held (0.003 rad) |
+| Backlash 1 deg, encoders on loads | gap 1 deg at both joints, encoders on the loads (gap inside the loop) (chosen) | held (0.004 rad) | held (0.008 rad) | held (0.001 rad) |
+| Heavier tip | tip mass 0.06 kg (shoulder gravity torque up to 0.47 N*m: over the GL40's 0.25 rated, under its 0.75 peak) (chosen) | **not held** (1.293 rad) | **not held** (2.863 rad) | **not held** (2.867 rad) |
+| Combined | AS5047P-class encoders + 1 deg gap (encoders on motors) + friction 0.02 N*m (mix of the above) | held (0.020 rad) | held (0.014 rad) | held (0.013 rad) |
+
+"Held": every joint within 0.1 rad of its target over the last 0.5 s of the pose (the number is the largest error). With 30 ms of encoder lag the
+inverted arm is thrown away and whirls. With the heavier tip the shoulder's calibration found the wrong direction (`sensor dir: CCW`, pole-pair
+estimate 5.47 against 14) and the joint never recovered: an imperfection breaks the firmware's calibration before it breaks the control loop.
+
+### One link
+
+![Twelve one-link cases side by side, same firmware in every panel](sim/screenshots/one-link-cases.gif)
+
+| Case | Parameters | Step 1: overshoot, settle | Step 2: overshoot, settle | Step 2, last 0.5 s: error, peak-to-peak |
+| --- | --- | --- | --- | --- |
+| Ideal | exact encoder, no friction, no backlash, 0.07 kg tip | -0.4%, 1.51 s | +0.9%, 0.51 s | +0.001, 0.001 rad |
+| AS5047P-class encoder | 14-bit, noise 0.068 deg rms, delay 110 us (datasheet (AS5047P, ams-OSRAM)) | +0.0%, 1.61 s | +2.3%, 1.35 s | +0.001, 0.026 rad |
+| Same encoder, zero at rest pose | as the previous panel, but the encoder's 0/2pi wrap sits at the arm's hang pose (setup, not a part (firmware built with ENC_REST_ANGLE=0)) | +0.2%, 1.50 s | +2.0%, 0.51 s | +0.004, 0.018 rad |
+| Rough encoder | 12-bit, noise 0.3 deg rms, delay 5 ms (chosen) | +1.6%, 2.41 s | +7.9%, 2.45 s | +0.019, 0.067 rad |
+| Encoder lag | delay 20 ms, otherwise exact (chosen) | unstable | unstable | arm whirls away (error +72 rad) |
+| Joint friction | Coulomb 0.03 N*m (12% of the GL40's 0.25 N*m rated torque) + viscous 0.01 (chosen; Coulomb + viscous is MuJoCo's own model) | -0.4%, 1.49 s | +1.3%, 0.50 s | +0.012, 0.001 rad |
+| Payload 0.2 kg | tip mass 0.2 kg (gravity torque up to 0.62 N*m: over the GL40's 0.25 rated, under its 0.75 peak) (chosen) | -9.0%, never | -98.9%, never | -1.059, 0.004 rad |
+| Backlash 15 arcmin | gap 0.25 deg, encoder on the motor, arm hangs (gravity preloads the gap) (catalogue: standard planetary 5-15 arcmin) | -0.6%, 1.58 s | +0.6%, 0.52 s | -0.002, 0.001 rad |
+| Combined | AS5047P-class encoder + friction + 15 arcmin gap + 0.15 kg (mix of the above) | -0.7%, 1.90 s | +2.6%, 1.59 s | +0.004, 0.009 rad |
+| Horizontal plane, ideal | no gravity on the joint (drawn from the side); exact encoder, no gap | +0.9%, 0.47 s | +0.5%, 0.49 s | +0.000, 0.000 rad |
+| Horizontal, 1 deg gap, encoder on motor | no gravity, gap 1 deg, encoder on the motor (chosen) | +1.5%, 0.45 s | +1.4%, 0.46 s | +0.000, 0.002 rad |
+| Horizontal, 1 deg gap, encoder on load | no gravity, gap 1 deg, encoder on the load (the gap is inside the loop) (chosen) | +0.8%, 0.47 s | +0.5%, 0.49 s | +0.000, 0.001 rad |
+
+*Settle*: time from the command until the true angle stays within 0.02 rad; "never" means not within the 2.5 s hold. *Overshoot* is relative to
+the step. "Horizontal" cases have no gravity on the joint, which is where backlash shows (on a hanging arm gravity keeps the gear face
+pressed). With the GL40's light rotor (74 g*cm^2) the gap closes in a few milliseconds, and in the horizontal cases the load came to rest
+within 0.002 rad of the target with the encoder on either side.
 
 ## What this does not test
 
