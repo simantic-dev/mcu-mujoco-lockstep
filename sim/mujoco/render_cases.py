@@ -42,7 +42,7 @@ for k, c in enumerate(CASES):
     tr.plot(data[c["name"]]["t"], [tg(x) for x in data[c["name"]]["t"]], "k--", lw=0.8)
     ln, = tr.plot([], [], color="C0", lw=1.1)
     res = R[c["name"]]
-    if res.get("ready_s") is None: cap = "firmware did not reach 'Motor ready'"
+    if res.get("ready_s") is None: cap = "firmware did not report ready"
     else:
         s2 = res["step2"]; st = "none" if s2["settle_2cm_s"] is None else f"{s2['settle_2cm_s']:.2f} s"
         cap = f"step 2: overshoot {s2['overshoot_pct']:+.1f}%  settle {st}\nlast 0.5 s: error {s2['mean_err_last0p5']:+.3f}, p-p {s2['pp_last0p5']:.3f} rad"

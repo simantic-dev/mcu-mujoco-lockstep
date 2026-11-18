@@ -1,4 +1,5 @@
 // One joint of a robot, on a NUCLEO-G474RE.
+//   - Written for a CubeMars GL40 KV210 gimbal motor (14 pole pairs).
 //   - SimpleFOC closes an angle loop around a 3-PWM bridge on TIM4 (PB6, PB7, PB9, 25 kHz), reading the joint angle from
 //     an MT6835 magnetic encoder on SPI1 (PA5/PA6/PA7, chip select PA0).
 //   - CAN (FDCAN2, PB12 RX / PB13 TX, 500 kbit/s, classic frames):
@@ -22,11 +23,43 @@
 #define CAL_SPIN_RAD_S 0
 #endif
 
+// BENCH: the same firmware for a bare NUCLEO-G474RE (no motor, no encoder) and the same ELF in the simulator, to compare the two.
+// The console moves to PA2/PA3 (the ST-LINK virtual COM port), calibration is skipped (nothing to calibrate against), and the
+// firmware prints its clocks, milestone times and loop iterations per second.
+#ifdef BENCH
+Uart Console(PA3, PA2);  // USART2 or LPUART1 on PA2/PA3, wired to the ST-LINK virtual COM port
+#define CONSOLE Console
+static void mark(const char* what) { CONSOLE.print("T "); CONSOLE.print(what); CONSOLE.print(" "); CONSOLE.println(micros()); }
+#else
+#define CONSOLE Serial
+static void mark(const char*) {}
+#endif
+
+#ifdef BENCH16
+// Bench only: run from HSI16 with no PLL, so flash needs zero wait states (RM0440 table 9), to separate instruction timing from flash timing.
+extern "C" void SystemClock_Config(void) {
+  RCC_OscInitTypeDef osc = {};
+  RCC_ClkInitTypeDef clk = {};
+  HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
+  osc.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  osc.HSIState = RCC_HSI_ON;
+  osc.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  osc.PLL.PLLState = RCC_PLL_NONE;
+  HAL_RCC_OscConfig(&osc);
+  clk.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  clk.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  clk.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  clk.APB1CLKDivider = RCC_HCLK_DIV1;
+  clk.APB2CLKDivider = RCC_HCLK_DIV1;
+  HAL_RCC_ClockConfig(&clk, FLASH_LATENCY_0);
+}
+#endif
+
 static const uint32_t CMD_ID = 0x200 + JOINT_ID;
 static const uint32_t STATUS_ID = 0x100 + JOINT_ID;
 static const uint32_t STATUS_PERIOD_MS = 10;
 
-BLDCMotor motor = BLDCMotor(7);  // pole pairs
+BLDCMotor motor = BLDCMotor(14);  // pole pairs: CubeMars GL40 KV210
 // SimpleFOC's STM32 driver searches the timers on these pins and picks the best combination (TIM4 channels 1, 2 and 4 here).
 BLDCDriver3PWM driver = BLDCDriver3PWM(PB6, PB7, PB9);
 MagneticSensorMT6835 encoder = MagneticSensorMT6835(PA0, SPISettings(1000000, MSBFIRST, SPI_MODE3));
@@ -133,16 +166,20 @@ static void spinShow() {
 #endif
 
 void setup() {
-  Serial.begin(115200);
-#ifdef WAIT_FOR_SERIAL
+  CONSOLE.begin(115200);
+#if defined(WAIT_FOR_SERIAL) && !defined(BENCH)
   while (!Serial) {}  // the simulator's USB console attaches after boot; a real joint must not wait for a host
 #endif
-  SimpleFOCDebug::enable(&Serial);
+  SimpleFOCDebug::enable(&CONSOLE);
+#ifdef BENCH
+  CONSOLE.print("SYSCLK "); CONSOLE.print(HAL_RCC_GetSysClockFreq()); CONSOLE.print(" PCLK1 "); CONSOLE.println(HAL_RCC_GetPCLK1Freq());
+  mark("boot");
+#endif
   encoder.init();
   driver.voltage_power_supply = 12;
   driver.pwm_frequency = 25000;
   driver.voltage_limit = 8;
-  if (!driver.init()) { Serial.println("JOINT driver init failed"); return; }
+  if (!driver.init()) { CONSOLE.println("JOINT driver init failed"); return; }
   motor.linkDriver(&driver);
   motor.linkSensor(&encoder);
   motor.voltage_limit = 3;
@@ -152,26 +189,61 @@ void setup() {
   motor.PID_velocity.P = 1.0;
   motor.PID_velocity.I = 2;
   motor.velocity_limit = 20;
-  if (!canInit()) { Serial.println("JOINT CAN init failed"); return; }  // up from boot, so a command sent during calibration is kept
-  if (!motor.init()) { Serial.println("JOINT motor init failed"); return; }
+  if (!canInit()) { CONSOLE.println("JOINT CAN init failed"); return; }  // up from boot, so a command sent during calibration is kept
+  mark("can_up");
+  if (!motor.init()) { CONSOLE.println("JOINT motor init failed"); return; }
 #if CAL_SPIN_RAD_S > 0
+  mark("spin_start");
   spinShow();
+  mark("spin_end");
   motor.controller = MotionControlType::angle;
 #endif
-  if (!motor.initFOC()) { Serial.println("JOINT motor init failed"); return; }
+#ifdef BENCH
+  motor.sensor_direction = Direction::CW;  // given, so initFOC skips the alignment: there is no motor or encoder on the bench
+  motor.zero_electric_angle = 0;
+#endif
+  if (!motor.initFOC()) { CONSOLE.println("JOINT motor init failed"); return; }
   // The encoder reads ENC_REST_ANGLE at the rest pose, modulo a turn. SimpleFOC's angle counts whole turns (the power-up spin adds several), so take
   // the rest pose nearest to where the arm is now: commands are then relative to that, and the arm does not unwind the spin.
   encoder.update();
   float a = encoder.getAngle();
   restAbs = a - (remainderf(a - ENC_REST_ANGLE, _2PI));
-  Serial.print("JOINT ");
-  Serial.print(JOINT_ID);
-  Serial.println(" ready");
+  mark("ready");
+  CONSOLE.print("JOINT ");
+  CONSOLE.print(JOINT_ID);
+  CONSOLE.println(" ready");
 }
 
 void loop() {
+#ifdef BENCH
+  // Cycle counts (DWT->CYCCNT) per part of the loop, averaged over each second, to compare the board with the simulator part by part.
+  static uint32_t n = 0, t0 = micros(), lines = 0;
+  static uint64_t cFoc = 0, cMove = 0, cCan = 0, cLoop = 0;
+  static uint32_t cSpi = 0;
+  static bool dwt = false;
+  if (!dwt) { CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; DWT->CYCCNT = 0; DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk; dwt = true; }
+  uint32_t a = DWT->CYCCNT;
+  motor.loopFOC();
+  uint32_t b = DWT->CYCCNT;
+  motor.move(restAbs + cmd);
+  uint32_t c = DWT->CYCCNT;
+  canPoll();
+  canReport();
+  uint32_t d = DWT->CYCCNT;
+  cFoc += b - a; cMove += c - b; cCan += d - c; cLoop += d - a;
+  n++;
+  if (micros() - t0 >= 1000000 && lines < 10) {
+    uint32_t s0 = DWT->CYCCNT; encoder.readRawAngle21(); cSpi = DWT->CYCCNT - s0;  // one bare encoder read
+    CONSOLE.print("LOOP "); CONSOLE.print(n); CONSOLE.print(" "); CONSOLE.print(micros());
+    CONSOLE.print(" cyc foc "); CONSOLE.print((uint32_t)(cFoc / n)); CONSOLE.print(" move "); CONSOLE.print((uint32_t)(cMove / n));
+    CONSOLE.print(" can "); CONSOLE.print((uint32_t)(cCan / n)); CONSOLE.print(" body "); CONSOLE.print((uint32_t)(cLoop / n));
+    CONSOLE.print(" spi_read "); CONSOLE.println(cSpi);
+    n = 0; cFoc = cMove = cCan = cLoop = 0; t0 = micros(); lines++;
+  }
+#else
   motor.loopFOC();
   motor.move(restAbs + cmd);
   canPoll();
   canReport();
+#endif
 }

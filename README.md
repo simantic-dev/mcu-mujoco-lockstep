@@ -5,11 +5,13 @@ They are one simulation on one virtual clock: every 40 µs the firmware's PWM be
 comes back through a simulated magnetic encoder that the firmware reads over SPI. Nothing is paced by the wall clock, and a run is repeatable
 to the byte.
 
-![Two-link arm: two simulated MCUs, each running the joint firmware, driving one MuJoCo arm](sim/screenshots/two-link.gif)
+![Two-link arm: two simulated MCUs, each running the joint firmware, driving one MuJoCo arm, with both MCUs' consoles and the CAN bus](sim/screenshots/two-link-hd.gif)
 
 *Two simulated STM32G474s, one per joint, on one CAN bus, driving one MuJoCo two-link arm. At power-up each joint spins itself a couple of
 turns on purpose, brakes, then calibrates from wherever it stopped. A CAN master then puts the arm out horizontal, straight up (an inverted
-double pendulum), and straight up with the elbow bent. The green ghost is the commanded pose. Playback of a captured run, in virtual time.*
+double pendulum), and straight up with the elbow bent. The green ghost is the commanded pose. On the right: each MCU's own USB console,
+and the CAN bus, where each joint's firmware reports its measured angle. Playback of a captured run, in virtual time; HD video:
+[`sim/screenshots/two-link-hd.mp4`](sim/screenshots/two-link-hd.mp4).*
 
 ## How it works
 
@@ -36,7 +38,7 @@ steps once both are in (`sim/peers/world.py`).
 | Joint firmware (`firmware/joint`) | written for this repository: SimpleFOC 2.4.0 angle loop, MT6835 encoder on SPI1, 3-PWM on TIM4, target angle in and status out on FDCAN2 |
 | STM32G474 timers, SPI, FDCAN, clock | modelled by Simantic's `sim` |
 | Arm: gravity, inertia, damping, backlash | MuJoCo 4.0.1 (`sim/mujoco/arm.xml`, `sim/mujoco/two_link_xml.py`) |
-| Motor R, L, flux linkage, pole pairs; averaged switching | stand-ins in the plant peer (`MODELED SIMPLIFICATION`): no particular motor |
+| Motor | CubeMars GL40 KV210 gimbal motor, from [its published table](https://www.cubemars.com/goods-1132-GL40.html): 14 pole pairs, 0.25 ohm and 90 uH per phase, Kt 0.050 N*m/A, rotor inertia 74 g*cm^2. Switching is averaged per PWM period (`MODELED SIMPLIFICATION`), no cogging |
 | Encoder, CAN master | Python peers in `sim/peers` |
 
 ## The power-up spin
@@ -49,15 +51,15 @@ the spin afterwards.
 ![One joint: the spin, the calibration and two commanded steps, with the firmware's console](sim/screenshots/one-link.gif)
 
 Measured on the one-link arm (`sim/run.sh`, `sim` 0.10.4 build cd27ee45, MuJoCo 4.0.1, 14 s virtual):
-- The arm spun 4.82 turns (30.3 rad), stopped, and calibrated: sensor direction CW, pole-pair check OK, `JOINT 1 ready` at 8.063 s.
-- Steps to 0.942 rad (at 9.0 s) and 1.885 rad (at 11.5 s): overshoot -0.7% and +5.4% of the step, mean error over the last 0.5 s of each hold
-  -0.0104 and +0.0022 rad. Without the spin the second step overshot +1.2%: calibrating from a different pose gave a different electrical zero.
+- The arm spun 4.8 turns (30.2 rad), stopped, and calibrated: sensor direction CW, pole-pair check OK, `JOINT 1 ready` at 8.063 s.
+- Steps to 0.942 rad (at 9.0 s) and 1.885 rad (at 11.5 s): overshoot -0.4% and +0.9% of the step, mean error over the last 0.5 s of each hold
+  -0.0059 and +0.0009 rad.
 
 ![Angle and torque of the same run](sim/screenshots/arm-step.png)
 
-On the two-link arm (`sim/mujoco/run_two_link.py ideal`, 17 s virtual) both joints spun about two turns, both reported ready at 8.063 s, and the
-arm held all three poses: largest error over the last 0.5 s of each was 0.011 rad (out), 0.067 rad (straight up) and 0.003 rad (up, elbow bent).
-The shoulder's pole-pair check warned (estimate 5.88 against 7): it calibrates while the elbow's weight swings it.
+On the two-link arm (`sim/mujoco/run_two_link.py ideal`, 17 s virtual) both joints spun, both passed the pole-pair check, both reported ready at
+8.063 s, and the arm held all three poses: largest error over the last 0.5 s of each was 0.005 rad (out), 0.007 rad (straight up) and 0.001 rad
+(up, elbow bent).
 
 ## Imperfect sensors and mechanics
 
@@ -67,8 +69,8 @@ encoders (noise, quantisation, lag; the AS5047P datasheet values as a realistic 
 
 ## What this does not test
 
-The motor is a stand-in with no current sensing, so the torque limits are the stand-in's, not a real joint's. The arms are planar with no
-contact. The power-up spin is a demo, not a recommended calibration.
+There is no current sensing and no thermal model: the GL40 is rated 0.25 N*m continuous, and some cases ask for more. The arms are planar
+with no contact. The power-up spin is a demo, not a recommended calibration.
 
 ## Run it
 
@@ -86,3 +88,12 @@ VENV=$PWD/.venv .venv/bin/python sim/mujoco/run_two_link.py ideal
 
 `sim` is Simantic's simulator. The checks with no firmware: `python sim/mujoco/swing_check.py` (pendulum period against the analytic one),
 `lash_check.py` and `two_link_check.py` (energy conservation of the free double pendulum, backlash gaps).
+
+## Checked against a real STM32G474
+
+The same firmware (a bench build: console on the ST-LINK port, no calibration because nothing is attached) was flashed to a NUCLEO-G474RE
+(silicon rev X) and run in the simulator. Clocks, timers and every boot milestone match to within 0.15 ms. The control loop runs 4.5 % faster
+in the simulator (10,622 against 10,162 iterations per second). Timing each part of the loop with the Cortex-M cycle counter puts the gap in
+plain CPU work from flash (11 to 22 % fast), not in the peripherals (the SPI encoder read is within 0.7 %): the simulator's G474 uses another
+STM32's flash and cache timing, unmeasured on the G474 at 170 MHz. The fix is to measure the G474's own flash timing and use it; until then,
+read loop rates here as about 4.5 % optimistic. Tables, raw logs and ELF hashes: [`bench/g474-2026-11-18`](bench/g474-2026-11-18/README.md).

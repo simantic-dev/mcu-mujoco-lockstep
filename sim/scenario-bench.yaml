@@ -1,0 +1,8 @@
+# The bare bench board: the BENCH build (firmware/build.sh BENCH=1) with nothing attached, no motor, no encoder, no CAN bus, to compare
+# with the same ELF on a NUCLEO-G474RE. The console is on PA2/PA3.
+machines:
+  dut:
+    mcu: STM32G474RET6
+    overlay: joint2.board
+    elf: build/joint-bench.elf
+timeout: 16

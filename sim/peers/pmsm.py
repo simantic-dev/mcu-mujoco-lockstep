@@ -2,7 +2,7 @@
 # shaft angle): a module of its own so both peer scripts import the same instance.
 from collections import deque
 
-P = 7
+P = 14  # CubeMars GL40 pole pairs (arm_plant.py)
 
 
 class Motor:

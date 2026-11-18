@@ -3,7 +3,7 @@
      horizontal. Inertia comes from MuJoCo's own geometry; the joint is torque-driven (motor
      actuator, gear 1), so data.ctrl[0] is the joint torque in N*m. -->
 <mujoco model="arm">
-  <option timestep="0.00004" gravity="0 0 -9.81" integrator="implicitfast"/>
+  <option timestep="0.00004" gravity="0 0 -9.81" integrator="implicitfast"><flag contact="disable"/></option>
   <visual><headlight ambient="0.55 0.55 0.55" diffuse="0.7 0.7 0.7" specular="0 0 0"/><global offwidth="960" offheight="720"/></visual>
   <asset>
     <texture type="skybox" builtin="gradient" rgb1="0.35 0.45 0.6" rgb2="0.05 0.07 0.1" width="32" height="512"/>
@@ -18,9 +18,9 @@
       <geom type="sphere" pos="0 0 -0.3" size="0.011" rgba="0.2 0.95 0.3 0.6" contype="0" conaffinity="0" mass="0"/>
     </body>
     <body name="link" pos="0 0 0">
-      <joint name="hinge" type="hinge" axis="0 1 0" damping="0.01" armature="2e-4"/>
+      <joint name="hinge" type="hinge" axis="0 1 0" damping="0.01" armature="7.4e-6"/>
       <geom type="capsule" fromto="0 0 0 0 0 -0.3" size="0.01" mass="0.02" rgba="0.85 0.85 0.9 1"/>
-      <geom type="sphere" pos="0 0 -0.3" size="0.02" mass="0.1" rgba="0.95 0.45 0.15 1"/>
+      <geom type="sphere" pos="0 0 -0.3" size="0.02" mass="0.07" rgba="0.95 0.45 0.15 1"/>
     </body>
   </worldbody>
   <actuator>

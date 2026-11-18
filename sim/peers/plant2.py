@@ -1,13 +1,18 @@
 # The plant peer of one joint of the two-link arm: the same electrical model and 40 us exchange as arm_plant.py, but the mechanics are the
 # shared MuJoCo world (world.py). Subclass it per joint (plant_j1.py, plant_j2.py) and set K = 0 or 1.
-# MODELED SIMPLIFICATION: R, L, PSI, P are stand-ins (no particular motor); averaged switching; the bridge is always enabled.
+# Motor: CubeMars GL40 KV210 gimbal motor, from the manufacturer's table (https://www.cubemars.com/goods-1132-GL40.html):
+# 14 pole pairs, 0.50 ohm and 180 uH phase to phase (so R = 0.25 ohm, L = 90 uH per phase), Kt 0.050 N*m/A, rotor inertia 74 g*cm^2
+# (the armature in the MuJoCo models), 0.25 N*m rated, 0.75 N*m peak. PSI = Kt / (1.5 * P), so that torque = Kt * iq.
+# The table's Ke (4.88 V/krpm) gives 0.0019 to 0.0027 Wb depending on its line/phase and peak/RMS convention, which the table does not state.
+# MODELED SIMPLIFICATION: averaged switching; the bridge is always enabled; no cogging or torque ripple.
 import math
 import os
 
 import world
 from pmsm import HISTS, MOTORS, READS_N
 
-R, L, PSI, P = 0.2, 1e-4, 0.004, 7
+R, L, P, KT = 0.25, 90e-6, 14, 0.050
+PSI = KT / (1.5 * P)
 VBUS = 12.0
 TIM4 = 0x40000800
 ARR, CCR1, CCR2, CCR4 = 0x2C, 0x34, 0x38, 0x40

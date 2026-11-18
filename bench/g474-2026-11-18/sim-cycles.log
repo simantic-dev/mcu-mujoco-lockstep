@@ -1,0 +1,63 @@
+[0.011071s] (lpuart1) SYSCLK 170000000 PCLK1 170000000
+[0.014026s] (lpuart1) T boot 10093
+[0.015245s] (lpuart1) TIM4-CH1 TIM3-CH4 TIM1-CH3N score: -3
+[0.018633s] (lpuart1) TIM4-CH1 TIM3-CH4 TIM4-CH4 score: 2
+[0.021848s] (lpuart1) TIM4-CH1 TIM3-CH4 TIM8-CH3 score: 3
+[0.025067s] (lpuart1) TIM4-CH1 TIM3-CH4 TIM17-CH1 score: 3
+[0.028376s] (lpuart1) TIM4-CH1 TIM4-CH2 TIM1-CH3N score: -3
+[0.031761s] (lpuart1) TIM4-CH1 TIM4-CH2 TIM4-CH4 score: 1
+[0.034983s] (lpuart1) TIM4-CH1 TIM4-CH2 TIM8-CH3 score: 2
+[0.038195s] (lpuart1) TIM4-CH1 TIM4-CH2 TIM17-CH1 score: 2
+[0.041504s] (lpuart1) TIM4-CH1 TIM17-CH1N TIM1-CH3N score: -3
+[0.045073s] (lpuart1) TIM4-CH1 TIM17-CH1N TIM4-CH4 score: -3
+[0.048545s] (lpuart1) TIM4-CH1 TIM17-CH1N TIM8-CH3 score: -3
+[0.052028s] (lpuart1) TIM4-CH1 TIM17-CH1N TIM17-CH1 score: -3
+[0.055597s] (lpuart1) TIM8-CH1 TIM3-CH4 TIM1-CH3N score: -3
+[0.058983s] (lpuart1) TIM8-CH1 TIM3-CH4 TIM4-CH4 score: 3
+[0.062205s] (lpuart1) TIM8-CH1 TIM3-CH4 TIM8-CH3 score: 2
+[0.065417s] (lpuart1) TIM8-CH1 TIM3-CH4 TIM17-CH1 score: 3
+[0.068726s] (lpuart1) TIM8-CH1 TIM4-CH2 TIM1-CH3N score: -3
+[0.072114s] (lpuart1) TIM8-CH1 TIM4-CH2 TIM4-CH4 score: 2
+[0.075333s] (lpuart1) TIM8-CH1 TIM4-CH2 TIM8-CH3 score: 2
+[0.078555s] (lpuart1) TIM8-CH1 TIM4-CH2 TIM17-CH1 score: 3
+[0.081854s] (lpuart1) TIM8-CH1 TIM17-CH1N TIM1-CH3N score: -3
+[0.085423s] (lpuart1) TIM8-CH1 TIM17-CH1N TIM4-CH4 score: -3
+[0.088902s] (lpuart1) TIM8-CH1 TIM17-CH1N TIM8-CH3 score: -3
+[0.092378s] (lpuart1) TIM8-CH1 TIM17-CH1N TIM17-CH1 score: -3
+[0.095947s] (lpuart1) TIM16-CH1N TIM3-CH4 TIM1-CH3N score: -3
+[0.099506s] (lpuart1) TIM16-CH1N TIM3-CH4 TIM4-CH4 score: -3
+[0.102989s] (lpuart1) TIM16-CH1N TIM3-CH4 TIM8-CH3 score: -3
+[0.106471s] (lpuart1) TIM16-CH1N TIM3-CH4 TIM17-CH1 score: -3
+[0.110030s] (lpuart1) TIM16-CH1N TIM4-CH2 TIM1-CH3N score: -3
+[0.113599s] (lpuart1) TIM16-CH1N TIM4-CH2 TIM4-CH4 score: -3
+[0.117082s] (lpuart1) TIM16-CH1N TIM4-CH2 TIM8-CH3 score: -3
+[0.120554s] (lpuart1) TIM16-CH1N TIM4-CH2 TIM17-CH1 score: -3
+[0.124123s] (lpuart1) TIM16-CH1N TIM17-CH1N TIM1-CH3N score: -3
+[0.127863s] (lpuart1) TIM16-CH1N TIM17-CH1N TIM4-CH4 score: -3
+[0.131512s] (lpuart1) TIM16-CH1N TIM17-CH1N TIM8-CH3 score: -3
+[0.135168s] (lpuart1) TIM16-CH1N TIM17-CH1N TIM17-CH1 score: -3
+[0.138904s] (lpuart1) STM32-DRV: best: TIM4-CH1 TIM4-CH2 TIM4-CH4 score: 1
+[0.143599s] (lpuart1) STM32-DRV: Initializing TIM4
+[0.146213s] (lpuart1) STM32-DRV: Timer resolution set to: 3400
+[0.149859s] (lpuart1) STM32-DRV: Configured TIM4_CH1
+[0.152647s] (lpuart1) STM32-DRV: Configured TIM4_CH2
+[0.155425s] (lpuart1) STM32-DRV: Configured TIM4_CH4
+[0.158212s] (lpuart1) STM32-DRV: Synchronising 1 timers
+[0.161257s] (lpuart1) T can_up 160180
+[0.162736s] (lpuart1) MOT:Init
+[0.660999s] (lpuart1) MOT:Enable driver.
+[1.160999s] (lpuart1) T spin_start 1160010
+[5.062166s] (lpuart1) T spin_end 5061177
+[5.063906s] (lpuart1) MOT:Align sensor.
+[5.065555s] (lpuart1) MOT:Skip dir calib.
+[5.067381s] (lpuart1) MOT:Skip offset calib.
+[5.069468s] (lpuart1) ERR-MOT:No current sense.
+[5.071811s] (lpuart1) MOT:Ready.
+[5.072856s] (lpuart1) T ready 5071866
+[5.074336s] (lpuart1) JOINT 1 ready
+[6.073027s] (lpuart1) LOOP 10542 6072038 cyc foc 14392 move 1398 can 96 body 15887 spi_read 12959
+[7.076067s] (lpuart1) LOOP 10542 7075078 cyc foc 14392 move 1398 can 96 body 15887 spi_read 12959
+[8.077987s] (lpuart1) LOOP 10542 8076999 cyc foc 14393 move 1398 can 96 body 15887 spi_read 12956
+[9.084047s] (lpuart1) LOOP 10542 9083058 cyc foc 14392 move 1398 can 96 body 15887 spi_read 12959
+[10.089245s] (lpuart1) LOOP 10542 10088256 cyc foc 14392 move 1398 can 96 body 15887 spi_read 12956
+[11.093321s] (lpuart1) LOOP 10542 11092332 cyc foc 14392 move 1398 can 96 body 15887 spi_read 12956
