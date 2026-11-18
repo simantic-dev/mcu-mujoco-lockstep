@@ -1,0 +1,5 @@
+.pio/
+sim/build/
+sim/out/
+__pycache__/
+*.bak

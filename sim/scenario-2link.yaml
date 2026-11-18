@@ -1,0 +1,22 @@
+# Two-link arm: two STM32G474 joints running firmware/joint (JOINT_ID 1 and 2) on one CAN bus, one MuJoCo model shared by their plant peers.
+# Part scripts and the elf are relative to this file; overlay peers relative to the repository root, where sim runs.
+machines:
+  j1:
+    mcu: STM32G474RET6
+    overlay: joint1.board
+    elf: build/joint1.elf
+    parts:
+      - { name: plant,   type: peripheral, address: 0xA0000400, size: 0x4, script: peers/plant_j1.py }
+      - { name: encoder, type: spi-device, bus: spi1, cs: PA0, script: peers/enc_j1.py }
+  j2:
+    mcu: STM32G474RET6
+    overlay: joint2.board
+    elf: build/joint2.elf
+    parts:
+      - { name: plant,   type: peripheral, address: 0xA0000400, size: 0x4, script: peers/plant_j2.py }
+      - { name: encoder, type: spi-device, bus: spi1, cs: PA0, script: peers/enc_j2.py }
+media:
+  - type: can
+    connect: [j1.fdcan2, j2.fdcan2, j1.canpeer]
+quantum: 0.00004
+timeout: 17

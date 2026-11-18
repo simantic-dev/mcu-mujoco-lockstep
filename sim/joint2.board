@@ -1,0 +1,3 @@
+# Joint 2 (elbow) of the two-link arm.
+rcc:
+    hseFrequency: 24000000

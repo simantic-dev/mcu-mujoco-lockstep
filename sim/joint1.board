@@ -1,0 +1,5 @@
+# Joint 1 (shoulder) of the two-link arm. The scripted CAN master lives on this machine and joins the shared bus in the scenario.
+canpeer: CAN.ScriptedCanNode @ sysbus 0x50100000
+    file: "sim/peers/can_master_2link.py"
+rcc:
+    hseFrequency: 24000000
