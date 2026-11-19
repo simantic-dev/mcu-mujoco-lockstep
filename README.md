@@ -1,5 +1,9 @@
 # Firmware on a simulated MCU, in lockstep with a MuJoCo robot
 
+<!-- simantic-banner -->
+> **Run this firmware with no hardware.** [Simantic](https://simantic.com) simulates the whole board, peripherals, sensors and buses included. Try it free at **[simantic.com](https://simantic.com)**, or run it locally: `curl -fsSL https://simantic.com/install | sh`
+
+
 Real motor-control firmware runs on a simulated STM32G474. The physics of the robot it drives come from [MuJoCo](https://mujoco.org).
 They are one simulation on one virtual clock: every 40 µs the firmware's PWM becomes a motor torque in MuJoCo, and MuJoCo's joint angle
 comes back through a simulated magnetic encoder that the firmware reads over SPI. Nothing is paced by the wall clock, and a run is repeatable
